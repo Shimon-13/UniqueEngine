@@ -1,25 +1,18 @@
-#include <ConstantBuffer.h>
-#include <Mesh.h>
-#include <Material.h>
+#include "ComponentManager.h"
 #include <DirectXMath.h>
 
 class GameObject {
 
 public:
-	GameObject();
+
+	ComponentManager m_ComponentManager;
+
+	GameObject(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, DescriptorPool* pPool);
 
 private:
-	std::wstring m_Path;
-	std::vector<Mesh*> m_pMesh;
-	std::vector<Material*> m_pMaterial;
-	ConstantBuffer* m_pCB;
-	DirectX::XMMATRIX m_Position;
+
 };
 
-GameObject::GameObject()
-	: m_Path()
-	, m_pMesh()
-	, m_pMaterial()
-	, m_pCB(nullptr)
-	, m_Position(DirectX::XMMatrixIdentity())
-	{ /* DO NOTHING */ }
+GameObject::GameObject(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, DescriptorPool* pPool){
+	m_ComponentManager.Init(pDevice, pQueue, pPool);
+}

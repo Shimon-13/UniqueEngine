@@ -36,7 +36,9 @@ HRESULT Input::InitDirectInput(HINSTANCE hInst, HWND hwnd) {
 //I—¹ŠÖ”
 void Input::Term() {
 	
-	m_InputDevice->Unacquire();
+	if (m_InputDevice != nullptr) {
+		m_InputDevice->Unacquire();
+	}
 
 	SafeRelease(m_InputDevice);
 	SafeRelease(m_InputInterface);
