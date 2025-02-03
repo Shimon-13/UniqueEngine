@@ -106,6 +106,20 @@ void MeshComponent::Term() {
 	m_Material.Term();
 }
 
+void MeshComponent::DrawInstance(ID3D12GraphicsCommandList* pCmd) {
+	for (size_t i = 0; i < m_pMesh.size(); ++i)
+	{
+		// マテリアルIDを取得.
+		auto id = m_pMesh[i]->GetMaterialId();
+
+		// テクスチャを設定.
+		pCmd->SetGraphicsRootDescriptorTable(1, m_Material.GetTextureHandle(id, TU_DIFFUSE));
+
+		// メッシュを描画.
+		m_pMesh[i]->Draw(pCmd);
+	}
+}
+
 std::wstring MeshComponent::GetPath() const {
 	return m_Path;
 }

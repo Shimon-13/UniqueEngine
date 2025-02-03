@@ -15,6 +15,7 @@ public:
 	bool Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, DescriptorPool* pPool, const wchar_t* path);
 	void Term();
 
+	void DrawInstance(ID3D12GraphicsCommandList* pCmd);	//ルートシグネチャに依存する
 	std::wstring GetPath() const;
 
 private:

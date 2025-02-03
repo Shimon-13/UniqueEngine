@@ -14,21 +14,6 @@
 #include "DirectXHelpers.h"
 
 
-namespace {
-
-///////////////////////////////////////////////////////////////////////////////
-// Transform structure
-///////////////////////////////////////////////////////////////////////////////
-struct Transform
-{
-    DirectX::XMMATRIX   World;      //!< ワールド行列です.
-    DirectX::XMMATRIX   View;       //!< ビュー行列です.
-    DirectX::XMMATRIX   Proj;       //!< 射影行列です.
-};
-
-} // namespace
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // SampleApp class
 ///////////////////////////////////////////////////////////////////////////////
@@ -52,89 +37,25 @@ SampleApp::~SampleApp()
 //-----------------------------------------------------------------------------
 bool SampleApp::OnInit()
 {
-    // メッシュをロード.
+    //ゲームオブジェクトの初期化
     {
-        std::wstring path;
+        GameObject* camera = new GameObject("camera", m_pDevice.Get(), m_pQueue.Get(), m_pPool[POOL_TYPE_RES]);
+        GameObject* obj1 = new GameObject("teapot", m_pDevice.Get(), m_pQueue.Get(), m_pPool[POOL_TYPE_RES]);
+        m_GameObjMgr.SetGameObject(camera->GetName(), camera);
+        m_GameObjMgr.SetGameObject(obj1->GetName(), obj1);
 
-        // ファイルパスを検索.
-        if (!SearchFilePath(L"res/teapot/teapot.obj", path))
-        {
-            ELOG("Error : File Not Found.");
-            return false;
-        }
+        InitData data = {};
 
-        std::wstring dir = GetDirectoryPath(path.c_str());
+        data.camera.width = m_Width;
+        data.camera.height = m_Height;
+        m_GameObjMgr.GetGameObject(camera->GetName())->m_ComponentManager.AddComponent(ComponentManager::CAMERA, data);
+        m_GameObjMgr.GetGameObject(camera->GetName())->m_ComponentManager.AddComponent(ComponentManager::TRANSFORM, data);
 
-        std::vector<ResMesh>        resMesh;
-        std::vector<ResMaterial>    resMaterial;
 
-        // メッシュリソースをロード.
-        if (!LoadMesh(path.c_str(), resMesh, resMaterial))
-        {
-            ELOG("Error : Load Mesh Failed. filepath = %ls", path.c_str());
-            return false;
-        }
+        m_GameObjMgr.GetGameObject(obj1->GetName())->m_ComponentManager.AddComponent(ComponentManager::TRANSFORM, data);
 
-        // メモリを予約.
-        m_pMesh.reserve(resMesh.size());
-
-        // メッシュを初期化.
-        for (size_t i = 0; i < resMesh.size(); ++i)
-        {
-            // メッシュ生成.
-            auto mesh = new (std::nothrow) Mesh();
-
-            // チェック.
-            if (mesh == nullptr)
-            {
-                ELOG( "Error : Out of memory.");
-                return false;
-            }
-
-            // 初期化処理.
-            if (!mesh->Init(m_pDevice.Get(), resMesh[i]))
-            {
-                ELOG( "Error : Mesh Initialize Failed.");
-                delete mesh;
-                return false;
-            }
-
-            // 成功したら登録.
-            m_pMesh.push_back(mesh);
-        }
-
-        // メモリ最適化.
-        m_pMesh.shrink_to_fit();
-
-        // マテリアル初期化.
-        if (!m_Material.Init(
-            m_pDevice.Get(),
-            m_pPool[POOL_TYPE_RES],
-            0,
-            resMaterial.size()))
-        {
-            ELOG( "Error : Material::Init() Failed.");
-            return false;
-        }
-
-        // リソースバッチを用意.
-        DirectX::ResourceUploadBatch batch(m_pDevice.Get());
-
-        // バッチ開始.
-        batch.Begin();
-
-        // テクスチャ設定.
-        for (size_t i = 0; i < resMaterial.size(); ++i)
-        {
-            std::wstring path = dir + resMaterial[i].DiffuseMap;
-            m_Material.SetTexture(i, TU_DIFFUSE, path, batch);
-        }
-
-        // バッチ終了.
-        auto future = batch.End(m_pQueue.Get());
-
-        // バッチ完了を待機.
-        future.wait();
+        data.mesh.MeshPath = L"../res/teapot/teapot.obj";
+        m_GameObjMgr.GetGameObject(obj1->GetName())->m_ComponentManager.AddComponent(ComponentManager::MESH, data);
     }
 
     // ルートシグニチャの生成.
@@ -276,45 +197,6 @@ bool SampleApp::OnInit()
             ELOG( "Error : ID3D12Device::CreateGraphicsPipelineState() Failed. retcode = 0x%x", hr );
             return false;
         }
-    }
-
-    // 変換行列用の定数バッファの生成.
-    {
-        m_Transform.reserve(FrameCount);
-
-        for(auto i=0u; i<FrameCount; ++i)
-        {
-            auto pCB = new (std::nothrow) ConstantBuffer();
-            if (pCB == nullptr)
-            {
-                ELOG("Error : Out of memory.");
-                return false;
-            }
-
-            // 定数バッファ初期化.
-            if (!pCB->Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(Transform) * 2))
-            {
-                ELOG("Error : ConstantBuffer::Init() Failed.");
-                return false;
-            }
-
-            // カメラ設定.
-            auto eyePos     = DirectX::XMVectorSet(0.0f, 1.0f, 2.0f, 0.0f);
-            auto targetPos  = DirectX::XMVectorZero();
-            auto upward     = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-            // 垂直画角とアスペクト比の設定.
-            auto fovY   = DirectX::XMConvertToRadians(37.5f);
-            auto aspect = static_cast<float>(m_Width) / static_cast<float>(m_Height);
-
-            // 変換行列を設定.
-            auto ptr = pCB->GetPtr<Transform>();
-            ptr->World = DirectX::XMMatrixIdentity();
-            ptr->View  = DirectX::XMMatrixLookAtRH(eyePos, targetPos, upward);
-            ptr->Proj  = DirectX::XMMatrixPerspectiveFovRH(fovY, aspect, 1.0f, 1000.0f);
-
-            m_Transform.push_back(pCB);
-        }
 
         m_RotateAngle = 0.0f;
     }
@@ -357,8 +239,13 @@ void SampleApp::OnRender()
             m_RotateAngle += 0.025f;
         }
 
-        auto pTransform = m_Transform[m_FrameIndex]->GetPtr<Transform>();
-        pTransform->World = DirectX::XMMatrixRotationY( m_RotateAngle );
+        auto camTrans = static_cast<TransformComponent*>(m_GameObjMgr.GetGameObject("camera")->m_ComponentManager.GetComponent(ComponentManager::TRANSFORM));
+        auto camera = static_cast<CameraComponent*>(m_GameObjMgr.GetGameObject("camera")->m_ComponentManager.GetComponent(ComponentManager::CAMERA));
+
+        camTrans->SetRotation(0.0f, m_RotateAngle, 0.0f);
+
+        auto transform = static_cast<TransformComponent*>(m_GameObjMgr.GetGameObject("teapot")->m_ComponentManager.GetComponent(ComponentManager::TRANSFORM));
+        transform->SetMatrices(camera->GetViewMatrix(), camera->GetProjectionMatrix());
     }
 
     // コマンドリストの記録を開始.
@@ -392,24 +279,17 @@ void SampleApp::OnRender()
             m_pPool[POOL_TYPE_RES]->GetHeap()
         };
 
+        auto trans = static_cast<TransformComponent*>(m_GameObjMgr.GetGameObject("teapot")->m_ComponentManager.GetComponent(ComponentManager::TRANSFORM));
+
         pCmd->SetGraphicsRootSignature( m_pRootSig.Get() );
         pCmd->SetDescriptorHeaps( 1, pHeaps );
-        pCmd->SetGraphicsRootConstantBufferView( 0, m_Transform[m_FrameIndex]->GetAddress() );
+        pCmd->SetGraphicsRootConstantBufferView( 0, trans->GetAddress() );
         pCmd->SetPipelineState( m_pPSO.Get() );
         pCmd->RSSetViewports( 1, &m_Viewport );
         pCmd->RSSetScissorRects( 1, &m_Scissor );
 
-        for(size_t i=0; i<m_pMesh.size(); ++i)
-        {
-            // マテリアルIDを取得.
-            auto id = m_pMesh[i]->GetMaterialId();
-
-            // テクスチャを設定.
-            pCmd->SetGraphicsRootDescriptorTable( 1, m_Material.GetTextureHandle(id, TU_DIFFUSE) );
-
-            // メッシュを描画.
-            m_pMesh[i]->Draw(pCmd);
-        }
+        auto mesh = static_cast<MeshComponent*>(m_GameObjMgr.GetGameObject("teapot")->m_ComponentManager.GetComponent(ComponentManager::MESH));
+        mesh->DrawInstance(pCmd);
     }
 
     // 表示用リソースバリア設定.
