@@ -36,7 +36,7 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 	for (size_t i = 0; i < resMesh.size(); ++i)
 	{
 		// メッシュ生成.
-		auto mesh = new (std::nothrow) Mesh();
+		auto mesh = std::make_shared<Mesh>();
 
 		// チェック.
 		if (mesh == nullptr)
@@ -49,7 +49,6 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 		if (!mesh->Init(pDevice, resMesh[i]))
 		{
 			ELOG("Error : Mesh Initialize Failed.");
-			delete mesh;
 			return false;
 		}
 
@@ -93,12 +92,9 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 	return true;
 }
 
-void MeshComponent::Term() {
-	// メッシュ破棄.
-	for (size_t i = 0; i < m_pMesh.size(); ++i)
-	{
-		SafeTerm(m_pMesh[i]);
-	}
+
+void MeshComponent::Term() 
+{
 	m_pMesh.clear();
 	m_pMesh.shrink_to_fit();
 

@@ -4,7 +4,6 @@ TransformComponent::TransformComponent()
 	: m_Position(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f))
 	, m_Scale(DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f))
 	, m_Rotation(DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f))
-	, m_BufferSize(sizeof(TransformMatrices))
 {	}
 
 TransformComponent::~TransformComponent() {
@@ -12,26 +11,34 @@ TransformComponent::~TransformComponent() {
 }
 
 bool TransformComponent::Init(ID3D12Device* pDevice, DescriptorPool* pPool) {
-	if (!m_TransformBuffer.Init(pDevice, pPool, m_BufferSize)) {
-		ELOG("TransformComponent::Init() Failed.");
+	if (pDevice == nullptr || pPool == nullptr) {
 		return false;
 	}
+
+	if (!m_Buffer.Init(pDevice, pPool, sizeof(TransformMatrices))) {
+		ELOG("m_Buffer.Init() Failed.");
+		return false;
+	}
+
 	return true;
 }
 
+void TransformComponent::OnUpdate() {
+
+}
+
 void TransformComponent::Term() {
-	m_TransformBuffer.Term();
+	m_Buffer.Term();
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS TransformComponent::GetAddress() const {
-	return m_TransformBuffer.GetAddress();
+D3D12_GPU_VIRTUAL_ADDRESS TransformComponent::GetAddress() {
+	return m_Buffer.GetAddress();
 }
 
-bool TransformComponent::SetMatrices(DirectX::XMMATRIX const& view, DirectX::XMMATRIX const& proj) {
-	auto ptr = m_TransformBuffer.GetPtr<TransformMatrices>();
-	ptr->World = this->GetMatrix();
-	ptr->View = view;
-	ptr->Proj = proj;
+void TransformComponent::SetBuffer(const DirectX::XMMATRIX& proj, const DirectX::XMMATRIX& view) {
+	m_Buffer.GetPtr<TransformMatrices>()->Proj = proj;
+	m_Buffer.GetPtr<TransformMatrices>()->View = view;
+	m_Buffer.GetPtr<TransformMatrices>()->World = GetMatrix();
 }
 
 DirectX::XMMATRIX TransformComponent::GetMatrix() const {

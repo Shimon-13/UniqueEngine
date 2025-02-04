@@ -1,25 +1,38 @@
 #pragma once
 
-#include <Mesh.h>
-#include "Logger.h"
-#include <FileUtil.h>
+#include <memory>
+#include <d3d12.h>
+#include <DescriptorPool.h>
+#include <string>
+#include <vector>
 #include <Material.h>
-#include <inlineUtil.h>
-#include "ComponentManager.h"
+#include <FileUtil.h>
+#include <Logger.h>
+#include <Mesh.h>
 
-class MeshComponent : public Component{
+#include "ComponentBase.h"
+
+// コンストラクタ-------------------------------------------
+// @param pDevice デバイスポインタ
+// @param pQueue キューポインタ
+// @param pPool ディスクリプタプールポインタ(POOL_TYPE_RES)
+// @param path メッシュのファイルパス
+// ---------------------------------------------------------
+class MeshComponent : public ComponentBase{
 
 public:
+
 	MeshComponent();
 	~MeshComponent();
+
 	bool Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, DescriptorPool* pPool, const wchar_t* path);
-	void Term();
+	void Term() override;
 
 	void DrawInstance(ID3D12GraphicsCommandList* pCmd);	//ルートシグネチャに依存する
 	std::wstring GetPath() const;
 
 private:
 	std::wstring m_Path;
-	std::vector<Mesh*> m_pMesh;
+	std::vector<std::shared_ptr<Mesh>> m_pMesh;
 	Material m_Material;
 };

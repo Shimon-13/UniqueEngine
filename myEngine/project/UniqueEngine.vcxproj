@@ -148,19 +148,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\CameraComponent.cpp" />
-    <ClCompile Include="..\src\ComponentManager.cpp" />
+    <ClCompile Include="..\src\ComponentBase.cpp" />
     <ClCompile Include="..\src\GameObject.cpp" />
-    <ClCompile Include="..\src\GameObjectManager.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\MeshComponent.cpp" />
+    <ClCompile Include="..\src\ObjectManager.cpp" />
     <ClCompile Include="..\src\SampleApp.cpp" />
     <ClCompile Include="..\src\TransformComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\CameraComponent.h" />
-    <ClInclude Include="..\include\ComponentManager.h" />
-    <ClInclude Include="..\include\GameObjectManager.h" />
+    <ClInclude Include="..\include\ComponentBase.h" />
     <ClInclude Include="..\include\MeshComponent.h" />
+    <ClInclude Include="..\include\ObjectManager.h" />
     <ClInclude Include="..\include\SampleApp.h" />
     <ClInclude Include="..\include\TransformComponent.h" />
   </ItemGroup>

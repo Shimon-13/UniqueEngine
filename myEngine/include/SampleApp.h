@@ -10,8 +10,11 @@
 #include <App.h>
 #include <ConstantBuffer.h>
 #include <Material.h>
-#include "GameObjectManager.h"
 
+#include "ObjectManager.h"
+#include "TransformComponent.h"
+#include "MeshComponent.h"
+#include "CameraComponent.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SampleApp class
@@ -27,7 +30,7 @@ public:
     //=========================================================================
     // public variables.
     //=========================================================================
-    GameObjectManager m_GameObjMgr;
+    ObjectManager m_ObjMgr;
 
     //=========================================================================
     // public methods.

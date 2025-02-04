@@ -1,16 +1,29 @@
 #pragma once
 
-#include "ComponentManager.h"
+#include <string>
+#include <memory>
+#include <unordered_map>
+#include <Logger.h>
 
-class GameObject {
+#include "ComponentBase.h"
+
+class ComponentBase;
+
+class GameObject : public std::enable_shared_from_this<GameObject>{
 
 public:
-
-	ComponentManager m_ComponentManager;
-
-	GameObject(std::string const name, ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, DescriptorPool* pPool);
+	template<typename ComponentType, typename ...ArgTypes>
+	void AddComponent(std::string name, ArgTypes ...args);
+	template<typename ComponentType>
+	void RemoveComponent();
+	template<typename ComponentType>
+	std::weak_ptr<ComponentBase> GetComponent() const;
+	void SetName(std::string name);
 	std::string GetName() const;
+	void Update();
 
 private:
-	std::string const m_Name;
+	std::string m_Name;
+
+	std::unordered_map<std::string, std::shared_ptr<ComponentBase>> m_Components;
 };

@@ -39,23 +39,14 @@ bool SampleApp::OnInit()
 {
     //ゲームオブジェクトの初期化
     {
-        GameObject* camera = new GameObject("camera", m_pDevice.Get(), m_pQueue.Get(), m_pPool[POOL_TYPE_RES]);
-        GameObject* obj1 = new GameObject("teapot", m_pDevice.Get(), m_pQueue.Get(), m_pPool[POOL_TYPE_RES]);
-        m_GameObjMgr.SetGameObject(camera->GetName(), camera);
-        m_GameObjMgr.SetGameObject(obj1->GetName(), obj1);
+        m_ObjMgr.GenerateObject("mainCamera");
+        m_ObjMgr.GenerateObject("teapot");
 
-        InitData data = {};
-
-        data.camera.width = m_Width;
-        data.camera.height = m_Height;
-        m_GameObjMgr.GetGameObject(camera->GetName())->m_ComponentManager.AddComponent(ComponentManager::CAMERA, data);
-        m_GameObjMgr.GetGameObject(camera->GetName())->m_ComponentManager.AddComponent(ComponentManager::TRANSFORM, data);
-
-
-        m_GameObjMgr.GetGameObject(obj1->GetName())->m_ComponentManager.AddComponent(ComponentManager::TRANSFORM, data);
-
-        data.mesh.MeshPath = L"../res/teapot/teapot.obj";
-        m_GameObjMgr.GetGameObject(obj1->GetName())->m_ComponentManager.AddComponent(ComponentManager::MESH, data);
+        auto camera = m_ObjMgr.GetGameObject("MainCamera").lock();
+        camera->AddComponent<CameraComponent>("camera", m_Width, m_Height);
+        auto teapot = m_ObjMgr.GetGameObject("teapot").lock();
+        teapot->AddComponent<TransformComponent>("transform", m_pDevice, &m_pPool[POOL_TYPE_RES], camera->GetComponent<CameraComponent>());
+        teapot->AddComponent<MeshComponent>("mesh", m_pDevice, m_pQueue, &m_pPool[POOL_TYPE_RES], "../res/teapot/teapot.obj");
     }
 
     // ルートシグニチャの生成.
@@ -239,13 +230,13 @@ void SampleApp::OnRender()
             m_RotateAngle += 0.025f;
         }
 
-        auto camTrans = static_cast<TransformComponent*>(m_GameObjMgr.GetGameObject("camera")->m_ComponentManager.GetComponent(ComponentManager::TRANSFORM));
-        auto camera = static_cast<CameraComponent*>(m_GameObjMgr.GetGameObject("camera")->m_ComponentManager.GetComponent(ComponentManager::CAMERA));
+        auto cam = static_cast<CameraComponent*>(m_ObjMgr.GetGameObject("mainCamera").lock()->GetComponent<CameraComponent>().lock().get());
+        cam->SetRotation(0.0f, m_RotateAngle, 0.0f);
 
-        camTrans->SetRotation(0.0f, m_RotateAngle, 0.0f);
+        auto trans = static_cast<TransformComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock().get());
+        trans->SetBuffer(cam->GetProjectionMatrix(), cam->GetViewMatrix());
 
-        auto transform = static_cast<TransformComponent*>(m_GameObjMgr.GetGameObject("teapot")->m_ComponentManager.GetComponent(ComponentManager::TRANSFORM));
-        transform->SetMatrices(camera->GetViewMatrix(), camera->GetProjectionMatrix());
+        m_ObjMgr.Update();   //必ず更新
     }
 
     // コマンドリストの記録を開始.
@@ -279,7 +270,8 @@ void SampleApp::OnRender()
             m_pPool[POOL_TYPE_RES]->GetHeap()
         };
 
-        auto trans = static_cast<TransformComponent*>(m_GameObjMgr.GetGameObject("teapot")->m_ComponentManager.GetComponent(ComponentManager::TRANSFORM));
+        auto trans = static_cast<TransformComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock().get());
+        auto mesh = static_cast<MeshComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<MeshComponent>().lock().get());
 
         pCmd->SetGraphicsRootSignature( m_pRootSig.Get() );
         pCmd->SetDescriptorHeaps( 1, pHeaps );
@@ -288,7 +280,6 @@ void SampleApp::OnRender()
         pCmd->RSSetViewports( 1, &m_Viewport );
         pCmd->RSSetScissorRects( 1, &m_Scissor );
 
-        auto mesh = static_cast<MeshComponent*>(m_GameObjMgr.GetGameObject("teapot")->m_ComponentManager.GetComponent(ComponentManager::MESH));
         mesh->DrawInstance(pCmd);
     }
 
