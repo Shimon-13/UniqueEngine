@@ -230,11 +230,11 @@ void SampleApp::OnRender()
             m_RotateAngle += 0.025f;
         }
 
-        //auto cam = static_cast<CameraComponent*>(m_ObjMgr.GetGameObject("mainCamera").lock()->GetComponent<CameraComponent>().lock().get());
-        //cam->SetRotation(0.0f, m_RotateAngle, 0.0f);
+        auto cam = static_cast<CameraComponent*>(m_ObjMgr.GetGameObject("mainCamera").lock()->GetComponent<CameraComponent>().lock().get());
+        cam->SetRotation(0.0f, m_RotateAngle, 0.0f);
 
-        //auto trans = static_cast<TransformComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock().get());
-        //trans->SetBuffer(cam->GetProjectionMatrix(), cam->GetViewMatrix());
+        auto trans = static_cast<TransformComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock().get());
+        trans->SetBuffer(cam->GetProjectionMatrix(), cam->GetViewMatrix());
 
         m_ObjMgr.Update();   //必ず更新
     }
@@ -270,17 +270,18 @@ void SampleApp::OnRender()
             m_pPool[POOL_TYPE_RES]->GetHeap()
         };
 
-        //auto trans = static_cast<TransformComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock().get());
-        //auto mesh = static_cast<MeshComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<MeshComponent>().lock().get());
+        auto trans = static_cast<TransformComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock().get());
+        auto mesh = static_cast<MeshComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<MeshComponent>().lock().get());
 
-        ConstantBuffer cb;
 
         pCmd->SetGraphicsRootSignature( m_pRootSig.Get() );
         pCmd->SetDescriptorHeaps( 1, pHeaps );
-        pCmd->SetGraphicsRootConstantBufferView( 0, cb.GetAddress() );
+        pCmd->SetGraphicsRootConstantBufferView( 0, trans->GetAddress() );
         pCmd->SetPipelineState( m_pPSO.Get() );
         pCmd->RSSetViewports( 1, &m_Viewport );
         pCmd->RSSetScissorRects( 1, &m_Scissor );
+
+        mesh->DrawInstance(pCmd);
     }
 
     // 表示用リソースバリア設定.
