@@ -1,6 +1,10 @@
 #include "ObjectManager.h"
 
-std::shared_ptr<GameObject> ObjectManager::GenerateObject(std::string name) {
+ObjectManager::~ObjectManager() {
+	Term();
+}
+
+void ObjectManager::GenerateObject(std::string name) {
 	
 	// インスタンス生成
 	std::shared_ptr<GameObject> instance = std::make_shared<GameObject>();
@@ -16,7 +20,6 @@ std::shared_ptr<GameObject> ObjectManager::GenerateObject(std::string name) {
 	//マップに登録
 	m_GameObjectItr[objName] = objItr;
 
-	return instance;
 }
 
 std::weak_ptr<GameObject> ObjectManager::GetGameObject(std::string const name) const{
@@ -44,6 +47,7 @@ void ObjectManager::DestroyObject(std::string name) {
 	}
 	// 見つけた場合
 	else {
+		it->second->get()->RemoveComponent();
 		// マップの紐づけを削除
 		m_GameObjectItr.erase(name);
 		// インスタンスの削除
@@ -79,6 +83,8 @@ std::string ObjectManager::CreateObjName(std::string name)
 		}
 
 	}
+
+	return "NO NAME";
 }
 
 void ObjectManager::Update() {
@@ -90,4 +96,13 @@ void ObjectManager::Update() {
 			object->Update();
 		}
 	}
+}
+
+void ObjectManager::Term() {
+
+	for (auto it = m_lInstances.begin(); it != m_lInstances.end();) {
+			m_GameObjectItr.erase(it->get()->GetName());
+			it = m_lInstances.erase(it);
+	}
+
 }

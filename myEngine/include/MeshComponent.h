@@ -9,6 +9,7 @@
 #include <FileUtil.h>
 #include <Logger.h>
 #include <Mesh.h>
+#include <InlineUtil.h>
 
 #include "ComponentBase.h"
 
@@ -25,7 +26,7 @@ public:
 	MeshComponent();
 	~MeshComponent();
 
-	bool Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, DescriptorPool* pPool, const wchar_t* path);
+	bool Init(ComPtr<ID3D12Device> pDevice, ComPtr<ID3D12CommandQueue> pQueue, DescriptorPool* pPool, const wchar_t* path);
 	void Term() override;
 
 	void DrawInstance(ID3D12GraphicsCommandList* pCmd);	//ルートシグネチャに依存する
@@ -33,6 +34,6 @@ public:
 
 private:
 	std::wstring m_Path;
-	std::vector<std::shared_ptr<Mesh>> m_pMesh;
+	std::vector<Mesh*> m_pMesh;
 	Material m_Material;
 };

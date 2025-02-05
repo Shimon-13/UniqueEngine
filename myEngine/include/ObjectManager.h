@@ -11,16 +11,20 @@ class ObjectManager {
 
 
 public:
+	~ObjectManager();
 
-	std::shared_ptr<GameObject> GenerateObject(std::string name);
+	void GenerateObject(std::string name);
 	std::weak_ptr<GameObject> GetGameObject(std::string const name) const;
 	void DestroyObject(std::string name);
 	void Update();
+
 
 private:
 
 	// 重複しない名前を生成する
 	std::string CreateObjName(std::string name);
+
+	void Term();
 
 	// ゲームオブジェクトを指すイテレータとゲームオブジェクト名を紐づける
 	std::unordered_map<std::string, std::list<std::shared_ptr<GameObject>>::iterator> m_GameObjectItr;

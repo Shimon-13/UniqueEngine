@@ -5,6 +5,7 @@
 #include <memory>
 #include <DescriptorPool.h>
 #include <ConstantBuffer.h>
+#include <InlineUtil.h>
 
 #include "ComponentBase.h"
 
@@ -18,7 +19,6 @@ struct TransformMatrices
 // コンストラクタ-----------------------------------------
 // @param pDevice デバイスポインタ
 // @param pPool ディスクリプタプールポインタ(POOL_TYPE_RES)
-// @param pCamera 描画用カメラコンポーネント(shared_ptr)
 // -------------------------------------------------------
 class TransformComponent : public ComponentBase {
 
@@ -26,8 +26,7 @@ public:
 	TransformComponent();
 	~TransformComponent();
 
-	bool Init(ID3D12Device* pDevice, DescriptorPool* pPool);
-	void OnUpdate() override;
+	bool Init(ComPtr<ID3D12Device> pDevice, DescriptorPool* pPool);
 	void Term() override;
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetAddress();

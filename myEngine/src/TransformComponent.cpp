@@ -10,21 +10,17 @@ TransformComponent::~TransformComponent() {
 	Term();
 }
 
-bool TransformComponent::Init(ID3D12Device* pDevice, DescriptorPool* pPool) {
+bool TransformComponent::Init(ComPtr<ID3D12Device> pDevice, DescriptorPool* pPool) {
 	if (pDevice == nullptr || pPool == nullptr) {
 		return false;
 	}
 
-	if (!m_Buffer.Init(pDevice, pPool, sizeof(TransformMatrices))) {
+	if (!m_Buffer.Init(pDevice.Get(), pPool, sizeof(TransformMatrices))) {
 		ELOG("m_Buffer.Init() Failed.");
 		return false;
 	}
 
 	return true;
-}
-
-void TransformComponent::OnUpdate() {
-
 }
 
 void TransformComponent::Term() {

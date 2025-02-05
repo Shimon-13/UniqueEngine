@@ -53,12 +53,12 @@ private:
     //=========================================================================
     // private variables.
     //=========================================================================
-    std::vector<Mesh*>              m_pMesh;            //!< メッシュです.
-    std::vector<ConstantBuffer*>    m_Transform;        //!< 変換行列です.
-    Material                        m_Material;         //!< マテリアルです.
     ComPtr<ID3D12PipelineState>     m_pPSO;             //!< パイプラインステートです.
     ComPtr<ID3D12RootSignature>     m_pRootSig;         //!< ルートシグニチャです.
     float                           m_RotateAngle;      //!< 回転角です.
+    std::shared_ptr<TransformComponent>  m_pTransform;
+    std::shared_ptr<CameraComponent> m_pCamera;
+    std::shared_ptr<MeshComponent> m_pMesh;
 
     //=========================================================================
     // private methods.

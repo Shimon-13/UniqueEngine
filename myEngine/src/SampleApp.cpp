@@ -42,11 +42,15 @@ bool SampleApp::OnInit()
         m_ObjMgr.GenerateObject("mainCamera");
         m_ObjMgr.GenerateObject("teapot");
 
-        auto camera = m_ObjMgr.GetGameObject("MainCamera").lock();
-        camera->AddComponent<CameraComponent>("camera", m_Width, m_Height);
-        auto teapot = m_ObjMgr.GetGameObject("teapot").lock();
-        teapot->AddComponent<TransformComponent>("transform", m_pDevice.Get(), m_pPool[POOL_TYPE_RES]);
-        teapot->AddComponent<MeshComponent>("mesh", m_pDevice.Get(), m_pQueue.Get(), m_pPool[POOL_TYPE_RES], L"../res/teapot/teapot.obj");
+        if (!m_ObjMgr.GetGameObject("mainCamera").expired()) {
+            m_ObjMgr.GetGameObject("mainCamera").lock()->AddComponent<CameraComponent>(m_Width, m_Height);
+        }
+        if (!m_ObjMgr.GetGameObject("teapot").expired()) {
+            m_ObjMgr.GetGameObject("teapot").lock()->AddComponent<TransformComponent>(m_pDevice, m_pPool[POOL_TYPE_RES]);
+            m_ObjMgr.GetGameObject("teapot").lock()->AddComponent<MeshComponent>(m_pDevice, m_pQueue, m_pPool[POOL_TYPE_RES], L"../res/teapot/teapot.obj");
+        }
+        
+
     }
 
     // ルートシグニチャの生成.
@@ -200,20 +204,8 @@ bool SampleApp::OnInit()
 //-----------------------------------------------------------------------------
 void SampleApp::OnTerm()
 {
-    // メッシュ破棄.
-    for(size_t i=0; i<m_pMesh.size(); ++i)
-    { SafeTerm(m_pMesh[i]); }
-    m_pMesh.clear();
-    m_pMesh.shrink_to_fit();
-
-    // マテリアル破棄.
-    m_Material.Term();
-
-    // 変換バッファ破棄.
-    for(size_t i=0; i<m_Transform.size(); ++i)
-    { SafeTerm(m_Transform[i]); }
-    m_Transform.clear();
-    m_Transform.shrink_to_fit();
+    m_ObjMgr.DestroyObject("mainCamera");
+    m_ObjMgr.DestroyObject("teapot");
 }
 
 //-----------------------------------------------------------------------------
@@ -230,11 +222,23 @@ void SampleApp::OnRender()
             m_RotateAngle += 0.025f;
         }
 
-        auto cam = static_cast<CameraComponent*>(m_ObjMgr.GetGameObject("mainCamera").lock()->GetComponent<CameraComponent>().lock().get());
-        cam->SetRotation(0.0f, m_RotateAngle, 0.0f);
+        if (m_ObjMgr.GetGameObject("mainCamera").expired()) {
+            ELOG("The Object Or Component Is Nothing.");
+            if (m_ObjMgr.GetGameObject("mainCamera").lock()->GetComponent<CameraComponent>().expired()) {
+                ELOG("The Object Or Component Is Nothing.");
+            }
+        }
+        auto camera = m_ObjMgr.GetGameObject("mainCamera").lock()->GetComponent<CameraComponent>().lock();
 
-        auto trans = static_cast<TransformComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock().get());
-        trans->SetBuffer(cam->GetProjectionMatrix(), cam->GetViewMatrix());
+        if (m_ObjMgr.GetGameObject("teapot").expired()) {
+            ELOG("The Object Or Component Is Nothing.");
+            if (m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().expired()) {
+                ELOG("The Object Or Component Is Nothing.");
+            }
+        }
+        auto transform = m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock();
+
+        transform->SetBuffer(camera->GetProjectionMatrix(), camera->GetViewMatrix());
 
         m_ObjMgr.Update();   //必ず更新
     }
@@ -270,18 +274,32 @@ void SampleApp::OnRender()
             m_pPool[POOL_TYPE_RES]->GetHeap()
         };
 
-        auto trans = static_cast<TransformComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock().get());
-        auto mesh = static_cast<MeshComponent*>(m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<MeshComponent>().lock().get());
 
+        if (m_ObjMgr.GetGameObject("teapot").expired()) {
+            if (m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().expired()) {
+                ELOG("The Object Or Component Is Nothing.");
+            }
+        }
+
+        auto teapotrans = m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<TransformComponent>().lock();
+
+        if (m_ObjMgr.GetGameObject("teapot").lock()->GetComponent<MeshComponent>().expired()) {
+            ELOG("The Object Or Component Is Nothing.");
+        }
+
+        auto teapotMesh = m_ObjMgr.GetGameObject("teapot").lock().get()->GetComponent<MeshComponent>().lock();
 
         pCmd->SetGraphicsRootSignature( m_pRootSig.Get() );
         pCmd->SetDescriptorHeaps( 1, pHeaps );
-        pCmd->SetGraphicsRootConstantBufferView( 0, trans->GetAddress() );
+        pCmd->SetGraphicsRootConstantBufferView( 0, teapotrans->GetAddress() );
         pCmd->SetPipelineState( m_pPSO.Get() );
         pCmd->RSSetViewports( 1, &m_Viewport );
         pCmd->RSSetScissorRects( 1, &m_Scissor );
 
-        mesh->DrawInstance(pCmd);
+
+         teapotMesh->DrawInstance(pCmd);
+
+
     }
 
     // 表示用リソースバリア設定.

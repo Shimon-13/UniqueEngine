@@ -25,7 +25,7 @@ bool CameraComponent::Init(uint32_t const windowWidth, uint32_t const windowHeig
 	m_windowWidth = windowWidth;
 	m_windowHeight = windowHeight;
 
-	m_CameraPosition = DirectX::XMFLOAT3(0.0f, -5.0f, 0.0f);
+	m_CameraPosition = DirectX::XMFLOAT3(0.0f, 0.0f, -5.0f);
 	m_CameraTarget = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 

@@ -7,7 +7,7 @@ MeshComponent::~MeshComponent() {
 	Term();
 }
 
-bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, DescriptorPool* pPool, const wchar_t* path) {
+bool MeshComponent::Init(ComPtr<ID3D12Device> pDevice, ComPtr<ID3D12CommandQueue> pQueue, DescriptorPool* pPool, const wchar_t* path) {
 
 	// ファイルパスを検索.
 	if (!SearchFilePath(path, m_Path))
@@ -36,7 +36,7 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 	for (size_t i = 0; i < resMesh.size(); ++i)
 	{
 		// メッシュ生成.
-		auto mesh = std::make_shared<Mesh>();
+		auto mesh = new(std::nothrow) Mesh();
 
 		// チェック.
 		if (mesh == nullptr)
@@ -46,7 +46,7 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 		}
 
 		// 初期化処理.
-		if (!mesh->Init(pDevice, resMesh[i]))
+		if (!mesh->Init(pDevice.Get(), resMesh[i]))
 		{
 			ELOG("Error : Mesh Initialize Failed.");
 			return false;
@@ -61,7 +61,7 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 
 	// マテリアル初期化.
 	if (!m_Material.Init(
-		pDevice,
+		pDevice.Get(),
 		pPool,
 		0,
 		resMaterial.size()))
@@ -71,7 +71,7 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 	}
 
 	// リソースバッチを用意.
-	DirectX::ResourceUploadBatch batch(pDevice);
+	DirectX::ResourceUploadBatch batch(pDevice.Get());
 
 	// バッチ開始.
 	batch.Begin();
@@ -84,7 +84,7 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 	}
 
 	// バッチ終了.
-	auto future = batch.End(pQueue);
+	auto future = batch.End(pQueue.Get());
 
 	// バッチ完了を待機.
 	future.wait();
@@ -95,6 +95,11 @@ bool MeshComponent::Init(ID3D12Device* pDevice, ID3D12CommandQueue* pQueue, Desc
 
 void MeshComponent::Term() 
 {
+	// メッシュ破棄.
+	for (size_t i = 0; i < m_pMesh.size(); ++i)
+	{
+		SafeTerm(m_pMesh[i]);
+	}
 	m_pMesh.clear();
 	m_pMesh.shrink_to_fit();
 
