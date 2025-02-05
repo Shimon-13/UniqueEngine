@@ -103,7 +103,8 @@ protected:
     D3D12_VIEWPORT              m_Viewport;                  // ビューポートです.
     D3D12_RECT                  m_Scissor;                   // シザー矩形です.
 
-    Input                       m_Keyboard;         //!< キーボードです
+    Input                       m_Keyboard;         // キーボード
+    Input                       m_Mouse;            // マウス
 
     //=========================================================================
     // protected methods.

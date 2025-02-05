@@ -79,7 +79,8 @@ bool App::InitApp()
     SetFocus( m_hWnd );
 
     //DirectInputの初期化
-    m_Keyboard.InitDirectInput(m_hInst, m_hWnd);
+    m_Keyboard.InitDirectInput(m_hInst, m_hWnd, Input::KEYBOARD);
+    m_Mouse.InitDirectInput(m_hInst, m_hWnd, Input::MOUSE);
 
     // 正常終了.
     return true;
@@ -93,6 +94,7 @@ void App::TermApp()
 
     //DirectInputの終了処理
     m_Keyboard.Term();
+    m_Mouse.Term();
 
     // アプリケーション固有の終了処理.
     OnTerm();
@@ -402,7 +404,8 @@ void App::MainLoop()
         }
         else
         {
-            m_Keyboard.SetInput();
+            m_Keyboard.K_SetInput();
+            m_Mouse.M_SetInput();
             OnRender();
         }
     }
