@@ -57,6 +57,10 @@ private:
     ComPtr<ID3D12RootSignature>     m_pRootSig;         //!< ルートシグニチャです.
     float                           m_RotateAngle;      //!< 回転角です.
 
+    const float m_JumpAcc = 0.01f;
+    float m_JumpVel;
+    bool m_IsGround;
+
     //=========================================================================
     // private methods.
     //=========================================================================

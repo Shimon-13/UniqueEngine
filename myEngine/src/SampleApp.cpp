@@ -24,6 +24,8 @@
 SampleApp::SampleApp(uint32_t width, uint32_t height)
 : App(width, height)
 , m_RotateAngle(0.0)
+, m_JumpVel(0.0f)
+, m_IsGround(true)
 { /* DO_NOTHING */ }
 
 //-----------------------------------------------------------------------------
@@ -41,6 +43,8 @@ bool SampleApp::OnInit()
     {
         m_ObjMgr.GenerateObject("mainCamera");
         m_ObjMgr.GenerateObject("player");
+        m_ObjMgr.GenerateObject("town");
+
 
         if (!m_ObjMgr.GetGameObject("mainCamera").expired()) {
             m_ObjMgr.GetGameObject("mainCamera").lock()->AddComponent<CameraComponent>(m_Width, m_Height);
@@ -48,6 +52,10 @@ bool SampleApp::OnInit()
         if (!m_ObjMgr.GetGameObject("player").expired()) {
             m_ObjMgr.GetGameObject("player").lock()->AddComponent<TransformComponent>(m_pDevice, m_pPool[POOL_TYPE_RES]);
             m_ObjMgr.GetGameObject("player").lock()->AddComponent<MeshComponent>(m_pDevice, m_pQueue, m_pPool[POOL_TYPE_RES], L"../res/player/player.fbx");
+        }
+        if (!m_ObjMgr.GetGameObject("town").expired()) {
+            m_ObjMgr.GetGameObject("town").lock()->AddComponent<TransformComponent>(m_pDevice, m_pPool[POOL_TYPE_RES]);
+            m_ObjMgr.GetGameObject("town").lock()->AddComponent<MeshComponent>(m_pDevice, m_pQueue, m_pPool[POOL_TYPE_RES], L"../res/town/town.obj");
         }
         
 
@@ -206,6 +214,7 @@ void SampleApp::OnTerm()
 {
     m_ObjMgr.DestroyObject("mainCamera");
     m_ObjMgr.DestroyObject("player");
+    m_ObjMgr.DestroyObject("town");
 }
 
 //-----------------------------------------------------------------------------
@@ -216,6 +225,7 @@ void SampleApp::OnRender()
     // 更新処理.
     {
 
+        // 各オブジェクトのコンポーネントの取得
         if (m_ObjMgr.GetGameObject("mainCamera").expired()) {
             ELOG("The Object Or Component Is Nothing.");
             if (m_ObjMgr.GetGameObject("mainCamera").lock()->GetComponent<CameraComponent>().expired()) {
@@ -230,28 +240,75 @@ void SampleApp::OnRender()
                 ELOG("The Object Or Component Is Nothing.");
             }
         }
-        auto transform = m_ObjMgr.GetGameObject("player").lock()->GetComponent<TransformComponent>().lock();
 
-        float moveX = 0.0f;
-        float moveY = 0.0f;
-        float moveZ = 0.0f;
+        if (m_ObjMgr.GetGameObject("town").expired()) {
+            ELOG("The Object Or Component Is Nothing.");
+            if (m_ObjMgr.GetGameObject("town").lock()->GetComponent<TransformComponent>().expired()) {
+                ELOG("The Object Or Component Is Nothing.");
+            }
+        }
+
+        auto playerTransform = m_ObjMgr.GetGameObject("player").lock()->GetComponent<TransformComponent>().lock();
+        auto townTransform = m_ObjMgr.GetGameObject("town").lock()->GetComponent<TransformComponent>().lock();
+
+
+
+        // 移動処理
+
+        float moveForward = 0.0f;
+        float moveRight = 0.0f;
+
+        float speed = 0.2f;
 
         if (m_Keyboard.K_GetInputState(DIK_A)) {
-            moveX += 0.025f;
+            moveForward += speed;
         }
         if (m_Keyboard.K_GetInputState(DIK_D)) {
-            moveX -= 0.025f;
+            moveForward -= speed;
         }
         if (m_Keyboard.K_GetInputState(DIK_W)) {
-            moveZ += 0.025f;
+            moveRight += speed;
         }
         if (m_Keyboard.K_GetInputState(DIK_S)) {
-            moveZ -= 0.025f;
+            moveRight -= speed;
         }
 
-        transform->SetPosition(transform->GetPosition().x + moveX, 0.0f, transform->GetPosition().z + moveZ);
+        // ジャンプ
 
-        transform->SetBuffer(camera->GetProjectionMatrix(), camera->GetViewMatrix());   //　座標変換用の行列更新
+        auto posY = playerTransform->GetPosition().y;
+
+        if (m_Keyboard.K_GetInputState(DIK_SPACE) && m_IsGround) {
+            m_JumpVel = 0.5f;
+            posY += m_JumpVel;
+            m_IsGround = false;
+        }
+
+        if (posY <= 0.0f) m_IsGround = true;
+
+        if (m_IsGround) {
+            posY = 0.0f;
+            m_JumpVel = 0.0f;
+        }
+        else {
+            posY += m_JumpVel;
+            m_JumpVel -= m_JumpAcc;
+        }
+
+        playerTransform->SetPosition(playerTransform->GetPosition().x + moveForward, posY, playerTransform->GetPosition().z + moveRight);
+
+        // カメラ処理
+
+        m_RotateAngle += m_Mouse.M_GetInputVelocity().x / 1000.0f;
+
+        camera->SetPosition(playerTransform->GetPosition().x + 10.0 * DirectX::XMScalarCos(m_RotateAngle), playerTransform->GetPosition().y + 8.0f, (playerTransform->GetPosition().z - 15.0f) + 10.0f * DirectX::XMScalarSin(m_RotateAngle));
+        camera->SetTarget(playerTransform->GetPosition().x, playerTransform->GetPosition().y, playerTransform->GetPosition().z + 1.0f);
+
+        // 座標変換用の行列更新(必須)----------------------------------------------------------------------------------
+
+        playerTransform->SetBuffer(camera->GetProjectionMatrix(), camera->GetViewMatrix());   
+        townTransform->SetBuffer(camera->GetProjectionMatrix(), camera->GetViewMatrix());
+
+        // --------------------------------------------------------------------------------------------------------------        
 
         m_ObjMgr.Update();   //必ず更新
     }
@@ -302,17 +359,28 @@ void SampleApp::OnRender()
 
         auto teapotMesh = m_ObjMgr.GetGameObject("player").lock().get()->GetComponent<MeshComponent>().lock();
 
+        if (m_ObjMgr.GetGameObject("town").lock()->GetComponent<MeshComponent>().expired()) {
+            ELOG("The Object Or Component Is Nothing.");
+        }
+
+        auto townMesh = m_ObjMgr.GetGameObject("town").lock().get()->GetComponent<MeshComponent>().lock();
+
+        if (m_ObjMgr.GetGameObject("town").expired()) {
+            if (m_ObjMgr.GetGameObject("town").lock()->GetComponent<TransformComponent>().expired()) {
+                ELOG("The Object Or Component Is Nothing.");
+            }
+        }
+
+        auto townTrans = m_ObjMgr.GetGameObject("town").lock()->GetComponent<TransformComponent>().lock();
+
         pCmd->SetGraphicsRootSignature( m_pRootSig.Get() );
         pCmd->SetDescriptorHeaps( 1, pHeaps );
-        pCmd->SetGraphicsRootConstantBufferView( 0, teapotrans->GetAddress() );
         pCmd->SetPipelineState( m_pPSO.Get() );
         pCmd->RSSetViewports( 1, &m_Viewport );
         pCmd->RSSetScissorRects( 1, &m_Scissor );
 
-
-         teapotMesh->DrawInstance(pCmd);
-
-
+        teapotMesh->DrawInstance(pCmd, teapotrans->GetAddress());
+        townMesh->DrawInstance(pCmd, townTrans->GetAddress());
     }
 
     // 表示用リソースバリア設定.

@@ -29,7 +29,7 @@ public:
 	bool Init(ComPtr<ID3D12Device> pDevice, ComPtr<ID3D12CommandQueue> pQueue, DescriptorPool* pPool, const wchar_t* path);
 	void Term() override;
 
-	void DrawInstance(ID3D12GraphicsCommandList* pCmd);	//ルートシグネチャに依存する
+	void DrawInstance(ID3D12GraphicsCommandList* pCmd, D3D12_GPU_VIRTUAL_ADDRESS transform);	//ルートシグネチャに依存する
 	std::wstring GetPath() const;
 
 private:

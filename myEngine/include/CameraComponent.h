@@ -23,6 +23,8 @@ public:
 	void SetTarget(float x, float y, float z);
 	void SetRotation(float x, float y, float z);
 
+	DirectX::XMFLOAT3 GetPosition() const;
+
 private:
 	DirectX::XMFLOAT3 m_CameraPosition;
 	DirectX::XMFLOAT3 m_CameraTarget;

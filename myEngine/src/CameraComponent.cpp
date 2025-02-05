@@ -56,6 +56,10 @@ void CameraComponent::SetRotation(float x, float y, float z) {
 	DirectX::XMStoreFloat4(&m_Rotation, quat);
 }
 
+DirectX::XMFLOAT3 CameraComponent::GetPosition() const{
+	return m_CameraPosition;
+}
+
 DirectX::XMMATRIX CameraComponent::GetViewMatrix() const {
 	auto camPos = DirectX::XMLoadFloat3(&m_CameraPosition);
 	auto camTarget = DirectX::XMLoadFloat3(&m_CameraTarget);

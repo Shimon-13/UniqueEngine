@@ -107,7 +107,10 @@ void MeshComponent::Term()
 	m_Material.Term();
 }
 
-void MeshComponent::DrawInstance(ID3D12GraphicsCommandList* pCmd) {
+void MeshComponent::DrawInstance(ID3D12GraphicsCommandList* pCmd, D3D12_GPU_VIRTUAL_ADDRESS transform) {
+
+	pCmd->SetGraphicsRootConstantBufferView(0, transform);
+
 	for (size_t i = 0; i < m_pMesh.size(); ++i)
 	{
 		// ƒ}ƒeƒŠƒAƒ‹ID‚ðŽæ“¾.
